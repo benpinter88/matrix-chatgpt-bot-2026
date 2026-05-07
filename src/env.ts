@@ -28,18 +28,15 @@ export const {
   /** Matrix Bot Runtime Config */
   MATRIX_DEFAULT_PREFIX,
   MATRIX_DEFAULT_PREFIX_REPLY,
-  /** ChatGPT Settings */
-  OPENAI_AZURE,
+  /** OpenAI Settings */
   OPENAI_API_KEY,
+  OPENAI_BASE_URL,
   CHATGPT_CONTEXT,
   CHATGPT_TIMEOUT,
   CHATGPT_API_MODEL,
   CHATGPT_PROMPT_PREFIX,
   CHATGPT_IGNORE_MEDIA,
-  CHATGPT_REVERSE_PROXY,
   CHATGPT_TEMPERATURE,
-  CHATGPT_MAX_CONTEXT_TOKENS,
-  CHATGPT_MAX_PROMPT_TOKENS,
 } = parseEnv(process.env, {
   DATA_PATH:                   { schema: z.string().default("./storage"),          description: "Set to /storage/ if using docker, ./storage if running without" },
   KEYV_BACKEND:                { schema: z.enum(["file", "other"]).default("file"),description: "Set the Keyv backend to 'file' or 'other' if other set KEYV_URL" },
@@ -65,16 +62,13 @@ export const {
   /** Matrix Bot Runtime Config */
   MATRIX_DEFAULT_PREFIX:       { schema: z.string().default(""),                   description: "Set to a string if you want the bot to respond only when messages start with this prefix. Trailing space matters. Empty for no prefix." },
   MATRIX_DEFAULT_PREFIX_REPLY: { schema: z.boolean().default(false),               description: "Set to false if you want the bot to answer to all messages in a thread/conversation" },
-  /** ChatGPT Settings */
-  OPENAI_AZURE:                { schema: z.boolean().default(false),               description: "Wether or not to use Azure OPENAI"},
-  OPENAI_API_KEY:              { schema: z.string().default(""),                   description: "Set to the API key from https://platform.openai.com/account/api-keys"},
-  CHATGPT_TIMEOUT:             { schema: z.number().default(2 * 60 * 1000),        description: "Set number of milliseconds to wait for ChatGPT responses" },
-  CHATGPT_CONTEXT:             { schema: z.enum(["thread", "room", "both"]).default("thread"), description: "Set the ChatGPT conversation context to 'thread', 'room' or 'both'" },
-  CHATGPT_API_MODEL:           { schema: z.string().default(""),                   description: "The model for the ChatGPT-API to use. Keep in mind that these models will charge your OpenAI account depending on their pricing." },
-  CHATGPT_PROMPT_PREFIX:       { schema: z.string().default('Instructions:\nYou are ChatGPT, a large language model trained by OpenAI.'), description: "Instructions to feed to ChatGPT on startup"},
-  CHATGPT_IGNORE_MEDIA:        { schema: z.boolean().default(false),               description: "Wether or not the bot should react to non-text messages"},
-  CHATGPT_REVERSE_PROXY:       { schema: z.string().default(""),                   description: "Change the api url to use another (OpenAI-compatible) API endpoint" },
-  CHATGPT_TEMPERATURE:         { schema: z.number().default(0.8),                  description: "Set the temperature for the model" },
-  CHATGPT_MAX_CONTEXT_TOKENS:  { schema: z.number().default(4097), description: "Davinci models have a max context length of 4097 tokens, but you may need to change this for other models." },
-  CHATGPT_MAX_PROMPT_TOKENS:   { schema: z.number().default(3097), description: "You might want to lower this to save money if using a paid model. Earlier messages will be dropped until the prompt is within the limit." },
+  /** OpenAI Settings */
+  OPENAI_API_KEY:              { schema: z.string().default(""),                   description: "Set to the API key from https://platform.openai.com/api-keys"},
+  OPENAI_BASE_URL:             { schema: z.string().default(""),                   description: "Override the OpenAI base URL (for OpenAI-compatible endpoints). Leave blank to use api.openai.com." },
+  CHATGPT_TIMEOUT:             { schema: z.number().default(2 * 60 * 1000),        description: "Milliseconds to wait for an OpenAI response before giving up" },
+  CHATGPT_CONTEXT:             { schema: z.enum(["thread", "room", "both"]).default("thread"), description: "Conversation context scope: 'thread', 'room' or 'both'" },
+  CHATGPT_API_MODEL:           { schema: z.string().default("gpt-5.5"),            description: "Model ID to send to the OpenAI Responses API. See https://developers.openai.com/api/docs/models" },
+  CHATGPT_PROMPT_PREFIX:       { schema: z.string().default('You are ChatGPT, a large language model accessed through a Matrix chat bot. Be concise and helpful.'), description: "System instructions sent with every request" },
+  CHATGPT_IGNORE_MEDIA:        { schema: z.boolean().default(false),               description: "Whether the bot should ignore non-text messages"},
+  CHATGPT_TEMPERATURE:         { schema: z.number().default(1.0),                  description: "Sampling temperature. Note: gpt-5 reasoning models may ignore this." },
 });

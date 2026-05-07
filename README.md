@@ -1,17 +1,23 @@
 Matrix ChatGPT Bot
 ==================
 
-Note: This is unmaintained. You should use [Baibot](https://github.com/etkecc/baibot) instead of this project.
-
 Talk to ChatGPT via any Matrix client!
 
 ![Screenshot of Element iOS app showing conversation with bot](img/matrix-chatgpt.png)
 
-A Matrix bot that uses [waylaidwanderer/node-chatgpt-api](https://github.com/waylaidwanderer/node-chatgpt-api) to access the official ChatGPT API.
+A Matrix bot that uses the official OpenAI [Responses API](https://developers.openai.com/api/reference/overview) to access GPT-5 family models.
 
-## Warning for users upgrading from version 2.x
-OpenAI released the [official API for ChatGPT](https://openai.com/blog/introducing-chatgpt-and-whisper-apis). Thus, we no longer have to use any older models or any models which kept on being turned off by OpenAI. This means the bot is now way more stable and way faster. However, please note: The usage of the API is **no longer free**. If you use this bot, your OpenAI account **will be charged**! You might want to limit your budget in your account using the [OpenAI website](https://platform.openai.com/account/billing).
-You need to remove the `CHATGPT_MODEL` variable from your environment, if you changed the value.
+## Upgrading from 3.x
+
+This is a fork that swaps the unmaintained `@waylaidwanderer/chatgpt-api` wrapper for the official `openai` SDK and the Responses API. Breaking env-var changes:
+
+- `CHATGPT_API_MODEL` now defaults to `gpt-5.5`. Override if you want `gpt-5.4`, `gpt-5.4-mini`, or `gpt-5.4-nano`.
+- `CHATGPT_REVERSE_PROXY` → renamed to `OPENAI_BASE_URL`.
+- `CHATGPT_MAX_CONTEXT_TOKENS` and `CHATGPT_MAX_PROMPT_TOKENS` removed — the API manages context.
+- `OPENAI_AZURE` removed. Open an issue if you need Azure OpenAI support back.
+- Stored conversation state is incompatible with 3.x (now uses Responses API `previous_response_id`). Delete `storage/chatgpt-bot-storage.json` (or your Keyv store) on upgrade so threads start fresh.
+
+The OpenAI API is **not free**. Set a spending cap in your [OpenAI billing page](https://platform.openai.com/account/billing) before running.
 
 # Usage
 1. Create a room
@@ -42,11 +48,11 @@ Adjust all required settings in the `.env` file before running. Optional setting
 - Restrict access with `MATRIX_ROOM_BLACKLIST` or `MATRIX_ROOM_WHITELIST`
 - When using a self-hosted setup, you could wildcard all your users with `MATRIX_WHITELIST=:yourhomeserver.example`.
 
-### OpenAI / ChatGPT
-- You need to have an account at [openai.com](https://openai.com/). Please note that the usage of the ChatGPT-API is not free.
-- Create a [API Key](https://platform.openai.com/account/api-keys). Then, set `OPENAI_API_KEY` in your `.env` file
-- You can change the chat-model by setting the `CHATGPT_API_MODEL` in your `.env` file. ChatGPT is the `gpt-3.5-turbo`-model which is the default. Please note that depending on the model your OpenAI account will be charged.
-- You can change the API-URL to use another base than the official OpenAI-endpoint. To do so, change the `CHATGPT_REVERSE_PROXY` in the `.env` file.
+### OpenAI
+- You need an account at [openai.com](https://openai.com/). API usage is not free.
+- Create an [API Key](https://platform.openai.com/api-keys). Set `OPENAI_API_KEY` in your `.env`.
+- Override the model with `CHATGPT_API_MODEL` (default `gpt-5.5`).
+- Point at an OpenAI-compatible endpoint with `OPENAI_BASE_URL` instead of the OpenAI default.
 
 ## Setup
 

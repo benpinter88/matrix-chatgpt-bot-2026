@@ -1,6 +1,8 @@
 Matrix ChatGPT Bot
 ==================
 
+> Fork of [matrixgpt/matrix-chatgpt-bot](https://github.com/matrixgpt/matrix-chatgpt-bot) (archived September 2024), updated for the OpenAI Responses API and `gpt-5.5`. Distributed under the original AGPL-3.0 license.
+
 Talk to ChatGPT via any Matrix client!
 
 ![Screenshot of Element iOS app showing conversation with bot](img/matrix-chatgpt.png)

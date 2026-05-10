@@ -1,6 +1,3 @@
-import ChatGPTClient from '@waylaidwanderer/chatgpt-api';
-import Keyv from 'keyv'
-import { KeyvFile } from 'keyv-file';
 import {
   MatrixAuth, MatrixClient, AutojoinRoomsMixin, LogService, LogLevel, RichConsoleLogger,
   RustSdkCryptoStorageProvider, IStorageProvider, SimpleFsStorageProvider, ICryptoStorageProvider,
@@ -8,14 +5,14 @@ import {
 
 import * as path from "path";
 import {
-  DATA_PATH, KEYV_URL, OPENAI_AZURE, OPENAI_API_KEY, MATRIX_HOMESERVER_URL, MATRIX_ACCESS_TOKEN, MATRIX_AUTOJOIN,
+  DATA_PATH, KEYV_URL, OPENAI_API_KEY, MATRIX_HOMESERVER_URL, MATRIX_ACCESS_TOKEN, MATRIX_AUTOJOIN,
   MATRIX_BOT_PASSWORD, MATRIX_BOT_USERNAME, MATRIX_ENCRYPTION, MATRIX_THREADS, CHATGPT_CONTEXT,
-  CHATGPT_API_MODEL, KEYV_BOT_STORAGE, KEYV_BACKEND, CHATGPT_PROMPT_PREFIX, MATRIX_WELCOME,
-  CHATGPT_REVERSE_PROXY, CHATGPT_TEMPERATURE, CHATGPT_MAX_CONTEXT_TOKENS, CHATGPT_MAX_PROMPT_TOKENS
+  CHATGPT_API_MODEL, KEYV_BOT_STORAGE, KEYV_BACKEND, MATRIX_WELCOME,
   } from './env.js'
 import CommandHandler from "./handlers.js"
 import { KeyvStorageProvider } from './storage.js'
-import { parseMatrixUsernamePretty, wrapPrompt } from './utils.js';
+import { parseMatrixUsernamePretty } from './utils.js';
+import { createOpenAIClient } from './openai.js';
 
 LogService.setLogger(new RichConsoleLogger());
 // LogService.setLevel(LogLevel.DEBUG);  // Shows the Matrix sync loop details - not needed most of the time
@@ -34,12 +31,8 @@ if (KEYV_BOT_STORAGE) {
 let cryptoStore: ICryptoStorageProvider;
 if (MATRIX_ENCRYPTION) cryptoStore = new RustSdkCryptoStorageProvider(path.join(DATA_PATH, "encrypted")); // /storage/encrypted
 
-let cacheOptions  // Options for the Keyv cache, see https://www.npmjs.com/package/keyv
-if (KEYV_BACKEND === 'file'){
-  cacheOptions = { store: new KeyvFile({ filename: path.join(DATA_PATH, `chatgpt-bot-api.json`) })  };
-} else { cacheOptions = { uri: KEYV_URL } }
-
 async function main() {
+  if (!OPENAI_API_KEY) throw Error("OPENAI_API_KEY is required");
   if (!MATRIX_ACCESS_TOKEN){
     const botUsernameWithoutDomain = parseMatrixUsernamePretty(MATRIX_BOT_USERNAME);
     const authedClient = await (new MatrixAuth(MATRIX_HOMESERVER_URL)).passwordLogin(botUsernameWithoutDomain, MATRIX_BOT_PASSWORD);
@@ -50,27 +43,7 @@ async function main() {
   if (!MATRIX_THREADS && CHATGPT_CONTEXT !== "room") throw Error("You must set CHATGPT_CONTEXT to 'room' if you set MATRIX_THREADS to false")
   const client: MatrixClient = new MatrixClient(MATRIX_HOMESERVER_URL, MATRIX_ACCESS_TOKEN, storage, cryptoStore);
 
-  if (!CHATGPT_API_MODEL) {
-    LogService.warn("index", "This bot now uses the official API from ChatGPT. In order to migrate add the CHATGPT_API_MODEL variable to your .env");
-    LogService.warn("index", "The official ChatGPT-model which should be used is 'gpt-3.5-turbo'. See the .env.example for details")
-    LogService.warn("index", "Please note that the usage of the models charge your OpenAI account and are not free to use");
-    return;
-  }
-
-  const clientOptions = {  // (Optional) Parameters as described in https://platform.openai.com/docs/api-reference/completions
-    modelOptions: {
-      model: CHATGPT_API_MODEL,  // The model is set to gpt-3.5-turbo by default
-      temperature: CHATGPT_TEMPERATURE,
-    },
-    promptPrefix: wrapPrompt(CHATGPT_PROMPT_PREFIX),
-    debug: false,
-    azure: OPENAI_AZURE,
-    reverseProxyUrl: CHATGPT_REVERSE_PROXY,
-    maxContextTokens: CHATGPT_MAX_CONTEXT_TOKENS,
-    maxPromptTokens: CHATGPT_MAX_PROMPT_TOKENS
-  };
-
-  const chatgpt = new ChatGPTClient(OPENAI_API_KEY, clientOptions, cacheOptions);
+  const openai = createOpenAIClient();
 
   // Automatically join rooms the bot is invited to
   if (MATRIX_AUTOJOIN) AutojoinRoomsMixin.setupOnClient(client);
@@ -97,11 +70,10 @@ async function main() {
   });
 
   // Prepare the command handler
-  const commands = new CommandHandler(client, chatgpt);
+  const commands = new CommandHandler(client, openai);
   await commands.start();
 
-  LogService.info("index", `Starting bot using ChatGPT model: ${CHATGPT_API_MODEL}`);
-  LogService.info("index", `Using promptPrefix: ${wrapPrompt(CHATGPT_PROMPT_PREFIX)}`)
+  LogService.info("index", `Starting bot using OpenAI model: ${CHATGPT_API_MODEL}`);
   await client.start()
   LogService.info("index", "Bot started!");
 }
